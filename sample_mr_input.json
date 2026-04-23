@@ -1,0 +1,63 @@
+{
+  "project_requirements": [
+    "When battery temperature rises above threshold, charging current must derate safely.",
+    "The vehicle must publish a diagnostic trouble code when thermal sensor data is invalid.",
+    "Driver-visible charging status must remain accurate during derating and recovery."
+  ],
+  "vehicle_platform": "EV platform Gen3",
+  "affected_ecus": [
+    "Battery Management ECU",
+    "Charging Control ECU",
+    "Instrument Cluster"
+  ],
+  "compliance_tags": [
+    "ISO 26262",
+    "ASPICE"
+  ],
+  "safety_notes": [
+    "Charging derating must enter fail-safe mode if temperature sampling is unavailable.",
+    "DTC reporting and recovery state transitions require validation."
+  ],
+  "mr_title": "Fix charging derate regression for high battery temperature",
+  "mr_description": "Updates battery thermal logic, charging control state machine, and cluster charging status mapping after a field regression.",
+  "acceptance_criteria": [
+    "Charging current derates correctly when battery temperature exceeds threshold.",
+    "Invalid thermal sensor values set a diagnostic trouble code.",
+    "Cluster charging status reflects derated and recovered states correctly."
+  ],
+  "changed_files": [
+    "src/bms/BatteryThermalManager.cpp",
+    "src/bms/BatteryTemperatureFilter.cpp",
+    "src/charging/ChargeCurrentController.cpp",
+    "src/charging/ChargeStateMachine.cpp",
+    "src/diagnostics/ThermalDiagMonitor.cpp",
+    "src/cluster/ChargingStatusMapper.cpp",
+    "tests/hil/charging_derate_hil.cpp"
+  ],
+  "diff_summary": "Changed battery thermal evaluation, charging state transitions, diagnostic reporting, and cluster signal mapping.",
+  "modules_touched": [
+    "battery",
+    "charging",
+    "diagnostics",
+    "cluster"
+  ],
+  "bug_history": [
+    {
+      "module": "charging",
+      "summary": "Field issue: charging current did not derate when thermal sensor latency increased."
+    },
+    {
+      "module": "battery",
+      "summary": "Battery ECU recovered too early after over-temperature and caused charge oscillation."
+    }
+  ],
+  "known_risky_modules": [
+    "battery",
+    "charging",
+    "diagnostics"
+  ],
+  "test_coverage_notes": [
+    "HIL coverage exists for nominal charging but thermal sensor fault coverage is weak.",
+    "Diagnostics regression pack does not cover all recovery transitions."
+  ]
+}
