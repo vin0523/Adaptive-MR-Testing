@@ -1,21 +1,39 @@
 # Automotive MR Test Prioritization Tool
 
-This tool generates a test-priority report for a merge request using:
+This repo contains a small, rule-based helper for deciding what to test first
+when an automotive merge request changes software that may affect vehicle
+behavior.
 
-- vehicle/program requirements
-- MR details
-- touched modules and ECUs
-- previous bugs or field defects
-- known risky modules
+The idea is simple: not every changed file deserves the same test effort. If an
+MR touches battery derating, diagnostics, ECUs, bus communication, or a module
+with previous field issues, the validation team should see that risk clearly and
+early.
+
+## What It Does
+
+The script reads a JSON summary of an MR and produces a Markdown report that
+answers the questions a test engineer usually asks first:
+
+- Which modules or vehicle functions should we test first?
+- Why are those areas risky?
+- Which requirements are connected to the change?
+- Have we seen similar defects before?
+- What kind of testing makes sense: HIL, SIL, bench, vehicle, diagnostics, or regression?
+- Which areas can be tested more lightly for this MR?
+
+The scoring is intentionally transparent. It is not machine learning and it does
+not try to replace engineering judgement. It gives the team a fast, explainable
+starting point for test planning.
 
 ## Files
 
-- `generate_test_priorities.py`: command-line tool
-- `sample_mr_input.json`: example input
-- `system_prompt.md`: reusable prompt if you want an LLM version too
-- `mr_test_prioritization_agent.md`: agent design notes
+- `generate_test_priorities.py`: the command-line tool
+- `sample_mr_input.json`: an example automotive MR input
+- `input_output_template.md`: a blank template for preparing MR data
+- `system_prompt.md`: optional prompt text if this is later paired with an LLM
+- `mr_test_prioritization_agent.md`: design notes for the test-prioritization assistant
 
-## Run
+## Run It
 
 ```bash
 python3 generate_test_priorities.py sample_mr_input.json
@@ -27,9 +45,9 @@ To save the report:
 python3 generate_test_priorities.py sample_mr_input.json -o report.md
 ```
 
-## Expected Input Format
+## Input Data
 
-Provide a JSON file with keys like:
+The tool works best when the input includes:
 
 - `project_requirements`
 - `vehicle_platform`
@@ -46,35 +64,39 @@ Provide a JSON file with keys like:
 - `known_risky_modules`
 - `test_coverage_notes`
 
-## What The Tool Produces
+You do not need perfect data to use it. If some information is missing, the
+report will still be generated, but the prioritization will be better when bug
+history, affected ECUs, and touched modules are filled in clearly.
 
-The report includes:
+## How It Prioritizes
 
-- MR risk summary
-- program context
-- priority test areas with scores
-- modules needing regression focus
-- suggested test scenarios
-- lower-priority areas
+The tool raises priority when an MR appears to touch:
 
-## LLM Integration Direction
+- safety-related functions such as charging, battery, braking, steering, ADAS, or thermal management
+- diagnostics, DTC behavior, UDS, CAN/LIN/FlexRay/Ethernet communication, or ECU interfaces
+- modules with previous field issues or repeated bugs
+- fail-safe behavior, degraded modes, timing windows, calibration, or state machines
+- areas tagged with safety or process standards such as ISO 26262, ASPICE, SOTIF, cybersecurity, or UNECE
 
-The current version intentionally stays rule-based. This keeps the scoring
-transparent, repeatable, and easy for automotive QA or validation engineers to
-review.
+The output is a practical report, not a pass/fail decision. A validation engineer
+should still review the result and adjust it based on release context, vehicle
+availability, safety impact, and test coverage.
 
-An LLM can be added later as an optional second layer. The recommended approach
-is:
+## LLM Direction
 
-1. Use `generate_test_priorities.py` to create the deterministic risk report.
-2. Send that report to an LLM only to rewrite it into a more polished test
-   strategy.
-3. Keep the rule-based score as the source of truth so the LLM does not invent
-   modules, ECUs, requirements, or defect history.
+For now, the repo stays rule-based. That keeps the score repeatable and easy to
+defend in a review.
 
-## Notes
+If an LLM is added later, it should be used only as a writing layer:
 
-- The current version uses automotive-specific scoring rules, not machine learning.
-- It works best when `modules_touched`, `affected_ecus`, and `bug_history` are filled in clearly.
-- It prioritizes safety-critical functions, ECU impact, diagnostics, field defects, and integration-heavy changes.
-- If you want, this can be extended next to read MR diffs automatically from GitLab or GitHub exports.
+1. Let `generate_test_priorities.py` create the deterministic risk report.
+2. Give that report to the LLM.
+3. Ask the LLM to rewrite it into a polished test strategy without changing the
+   priority order or inventing missing ECUs, requirements, modules, or defects.
+
+In short: the script decides the priority; an LLM may help explain it better.
+
+## Current Scope
+
+This version is focused on local JSON input. A useful next step would be reading
+MR metadata directly from GitLab or GitHub and generating the JSON automatically.

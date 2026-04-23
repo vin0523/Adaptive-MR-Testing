@@ -1,72 +1,87 @@
-# Input Template
+# Automotive MR Input Template
+
+Use this as a checklist when preparing data for the prioritization tool.
 
 ## Project Requirements
 
-[Paste project requirements here]
+[Paste the vehicle or program requirements affected by the MR.]
+
+## Vehicle Platform
+
+[Example: EV platform Gen3, ADAS program, body control platform.]
+
+## Affected ECUs / Controllers
+
+[List the ECUs, controllers, gateways, sensors, or displays touched by the MR.]
+
+## Safety / Compliance Notes
+
+[Mention ISO 26262, ASPICE, SOTIF, cybersecurity, UNECE, fail-safe behavior, or release constraints.]
 
 ## MR Title
 
-[Paste MR title here]
+[Paste the MR title.]
 
 ## MR Description
 
-[Paste MR description here]
+[Summarize what changed and why.]
 
 ## Acceptance Criteria
 
-[Paste acceptance criteria here]
+[Paste the acceptance criteria or validation expectations.]
 
 ## Changed Files
 
-[Paste file list here]
+[Paste the changed file list.]
 
 ## Diff Summary
 
-[Paste a human summary of the code changes here]
+[Write a short human summary of the code changes.]
 
 ## Modules Touched
 
-[List touched modules here]
+[List the functional areas touched, for example battery, charging, diagnostics, cluster, ADAS.]
 
-## Bug History
+## Bug / Field History
 
-[List previous bugs, production incidents, regressions, or defect-prone modules here]
+[List previous bugs, field incidents, regressions, or fragile modules related to this MR.]
 
 ## Known Risky Modules
 
-[List modules already known to be unstable here]
+[List modules already known to be unstable, complex, or historically defect-prone.]
 
 ## Test Coverage Notes
 
-[Mention missing tests, weak coverage, or existing automation here]
+[Mention missing tests, weak coverage, HIL/SIL/bench gaps, or existing automation.]
 
-# Output Template
+# Expected Report Shape
 
-## MR Risk Summary
+## Quick Read
 
 - Overall risk:
-- Main reasons:
+- Why:
 
-## Priority Test Areas
+## What To Test First
 
-| Priority | Feature/Module | Why It Matters | Requirement | Bug History | Recommended Test Focus |
+| Priority | Module/Function | Why It Matters | Requirement Link | Defect History | Suggested Focus |
 | --- | --- | --- | --- | --- | --- |
 
-## Modules Needing Regression Focus
+## Regression Focus
 
-- Module:
-- Reason:
-- Regression emphasis:
+- Area:
+- Old issue to replay:
+- Why it matters now:
 
 ## Suggested Test Scenarios
 
-- Happy path:
-- Edge case:
-- Negative case:
+- Normal case:
+- Boundary case:
+- Fault case:
+- Diagnostic case:
 - Regression case:
 - Integration case:
 
 ## Lower-Priority Areas
 
 - Area:
-- Why lower priority:
+- Why light testing is enough for this MR:

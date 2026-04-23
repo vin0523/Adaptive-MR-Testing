@@ -1,150 +1,77 @@
-# MR Test Prioritization Agent
+# Automotive MR Test Prioritization Assistant
 
-## Purpose
+This file describes the thinking behind the tool in this repo. The goal is to
+help a QA or validation engineer quickly decide where test effort should go when
+an automotive merge request arrives.
 
-This agent reviews a merge request (MR) and decides what should be tested first based on:
+## Why This Exists
 
-- project requirements
-- changed features in the MR
-- impacted modules and dependencies
-- previous bugs, regressions, and fragile areas
-- business and user risk
+In automotive software, the riskiest part of an MR is not always the largest
+code change. A small update to a state machine, diagnostic monitor, CAN signal,
+calibration threshold, or fail-safe path can deserve more attention than a much
+larger low-risk change.
 
-The goal is not to test everything equally. The goal is to identify the highest-value tests first and explain why.
+This assistant is meant to bring those risks to the surface early.
 
-## What The Agent Should Do
+## What It Looks At
 
-The agent should:
+The assistant checks the MR against practical validation signals:
 
-1. Read the MR summary, changed files, and acceptance criteria.
-2. Map code changes to product requirements or user flows.
-3. Identify which features are newly added, modified, or at regression risk.
-4. Detect modules that historically had bugs or repeated incidents.
-5. Prioritize testing around:
-   - risky modules
-   - cross-module integrations
-   - business-critical flows
-   - areas similar to previous bugs
-6. Produce a clear testing recommendation with priorities.
+- vehicle or program requirements
+- touched modules and changed files
+- affected ECUs or controllers
+- safety notes and compliance tags
+- known risky modules
+- previous bugs, regressions, or field issues
+- acceptance criteria and test coverage notes
 
-## Inputs
+## How It Thinks About Risk
 
-The agent should expect these inputs when available:
+An area becomes more important to test when it touches one or more of these:
 
-- `project_requirements`
-- `mr_title`
-- `mr_description`
-- `acceptance_criteria`
-- `changed_files`
-- `diff_summary`
-- `modules_touched`
-- `bug_history`
-- `recent_incidents`
-- `test_coverage_notes`
-- `known_risky_modules`
+- safety-related behavior such as charging, battery, braking, steering, ADAS, thermal management, or powertrain control
+- ECU-to-ECU communication, gateways, CAN/LIN/FlexRay/Ethernet signals, UDS, OBD, or DTC handling
+- fail-safe behavior, fallback states, degraded mode, timeouts, recovery logic, or state transitions
+- modules that already have a history of bugs or field incidents
+- requirements connected to ISO 26262, ASPICE, SOTIF, cybersecurity, or UNECE work
 
-## Decision Rules
+An area can usually be tested more lightly when the change is isolated, not
+safety-relevant, has no known defect history, and does not affect shared vehicle
+signals or controllers.
 
-The agent should use the following logic:
+## Expected Output
 
-### Priority Signals
+The report should help the team answer:
 
-Increase priority when:
+- Overall, is this MR low, medium, or high risk?
+- Which module should be tested first?
+- What requirement or vehicle behavior is connected to that module?
+- Which old bug or field issue should be replayed?
+- What test style is appropriate: unit, SIL, HIL, bench, vehicle, diagnostic, or regression?
+- Which areas are lower priority for this MR?
 
-- the MR changes authentication, payments, checkout, search, notifications, reporting, or other core flows
-- the module has repeated bug history
-- the change touches shared components, common services, or APIs used by many modules
-- the MR changes validation, permissions, state management, calculations, or data mapping
-- the change is large, cross-cutting, or poorly described
-- the change fixes a previous bug that could regress
-- the requirements mention edge cases, exceptions, or conditional logic
+## Example
 
-Decrease priority when:
+If an MR changes battery thermal derating and charging state recovery, and there
+was a previous field issue where charging current failed to derate during sensor
+latency, the assistant should prioritize:
 
-- the change is isolated, low-risk, and well-covered by tests
-- the module has no recent issues and no dependency impact
-- the MR only changes documentation, styling, or copy with no behavioral impact
+- battery thermal behavior
+- charging current limits
+- invalid or delayed sensor values
+- DTC reporting
+- fail-safe and recovery behavior
+- HIL or bench regression for the old failure path
 
-## Output Format
-
-The agent should return:
-
-### 1. MR Risk Summary
-
-- short description of overall risk
-- top reasons for the risk level
-
-### 2. Features To Test First
-
-For each feature or area:
-
-- `priority`: High / Medium / Low
-- `feature_or_module`
-- `why_it_matters`
-- `related_requirement`
-- `related_bug_history`
-- `recommended_test_focus`
-
-### 3. Modules Requiring Extra Attention
-
-List modules that need deeper validation because of:
-
-- repeated bugs
-- fragile integrations
-- complex business logic
-- dependency or shared-component impact
-
-### 4. Suggested Test Scenarios
-
-Include:
-
-- happy path
-- edge cases
-- negative scenarios
-- regression scenarios
-- integration scenarios
-
-### 5. Test Scope Exclusions
-
-Mention areas that do not need deep testing now and explain why.
-
-## Risk Scoring Model
-
-The agent can use a simple score from 1 to 5 for each area:
-
-- `5`: critical business risk or repeated production bugs
-- `4`: high impact with integration or logic complexity
-- `3`: moderate impact with some regression risk
-- `2`: low impact and localized change
-- `1`: minimal risk such as copy or cosmetic updates
-
-Example weighting:
-
-- requirement criticality: 30%
-- bug history: 25%
-- code change breadth: 20%
-- integration impact: 15%
-- test coverage gaps: 10%
-
-## Recommended Prompt
-
-Use the prompt in `system_prompt.md` as the system instruction for the agent.
-
-## Example Use Case
-
-If an MR changes the checkout discount logic and that module had pricing bugs before, the agent should:
-
-- rank checkout and pricing validation as High priority
-- recommend testing discount combinations, invalid coupons, tax calculation interactions, and order total rounding
-- call out any shared pricing service or API dependency
-- de-prioritize unrelated UI areas not affected by the MR
+It should not spend equal effort on unrelated display or UI areas unless the MR
+also changes driver-visible status behavior.
 
 ## Success Criteria
 
-The agent is successful when it:
+This assistant is useful when it helps the team:
 
-- focuses the team on the most important test targets
-- explains the reasoning behind priorities
-- connects MR changes to requirements
-- uses bug history to prevent repeat regressions
-- avoids wasting effort on low-risk areas
+- focus first on the highest-risk vehicle behavior
+- connect test effort to requirements and real defect history
+- avoid missing fragile ECU, diagnostic, or fail-safe interactions
+- explain the test strategy clearly during review
+- avoid over-testing areas that are not meaningfully affected by the MR
